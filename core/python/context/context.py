@@ -7,7 +7,7 @@ including inputs, constraints, routing hints, and output shaping rules.
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 from copy import deepcopy
 
@@ -102,7 +102,7 @@ class Context:
         self.output = output or {}
         self.metadata = metadata or {}
         self.parent_id = parent_id
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self._executor = None
         self._pruner = None
         self._router = None
@@ -348,7 +348,9 @@ class Context:
         
         # Restore created_at
         if "created_at" in data:
-            ctx.created_at = datetime.fromisoformat(data["created_at"])
+            # Handle both timezone-aware and naive ISO format strings
+            created_str = data["created_at"].replace('Z', '+00:00')
+            ctx.created_at = datetime.fromisoformat(created_str)
         
         return ctx
     
