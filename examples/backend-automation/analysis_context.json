@@ -1,0 +1,76 @@
+{
+  "id": "5a777f8b-711e-4191-8f39-1088a457d102",
+  "intent": "analyze_catalog",
+  "category": "library_metadata",
+  "inputs": [
+    {
+      "data": {
+        "id": "001",
+        "title": "Introduction to Machine Learning",
+        "category": "Computer Science",
+        "year": 2023,
+        "checkouts": 45
+      },
+      "relevance": 0.5560975609756097,
+      "tokens": 30
+    },
+    {
+      "data": {
+        "id": "002",
+        "title": "The Art of Data Visualization",
+        "category": "Data Science",
+        "year": 2022,
+        "checkouts": 78
+      },
+      "relevance": 0.7439024390243902,
+      "tokens": 28
+    },
+    {
+      "data": {
+        "id": "003",
+        "title": "Python for Beginners",
+        "category": "Programming",
+        "year": 2023,
+        "checkouts": 123
+      },
+      "relevance": 1.0,
+      "tokens": 26
+    },
+    {
+      "data": {
+        "id": "004",
+        "title": "Advanced Statistical Methods",
+        "category": "Statistics",
+        "year": 2021,
+        "checkouts": 12
+      },
+      "relevance": 0.36829268292682926,
+      "tokens": 27
+    },
+    {
+      "data": {
+        "id": "005",
+        "title": "Web Development Fundamentals",
+        "category": "Web Development",
+        "year": 2023,
+        "checkouts": 56
+      },
+      "relevance": 0.6186991869918699,
+      "tokens": 29
+    }
+  ],
+  "constraints": {
+    "max_tokens": 4000,
+    "max_cost": 0.1
+  },
+  "routing": {
+    "strategy": "cost_optimized"
+  },
+  "output": {},
+  "metadata": {
+    "analysis_date": "2025-12-21T21:44:14.283928",
+    "catalog_size": 5
+  },
+  "parent_id": null,
+  "created_at": "2025-12-21T21:44:14.283963"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@evcatalyst/context",
+  "version": "0.1.0",
+  "description": "Lightweight, cross-runtime execution abstraction for LLM requests",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node tests/test_context.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "context",
+    "execution",
+    "abstraction",
+    "typescript"
+  ],
+  "author": "evcatalyst",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evcatalyst/context"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
+}
