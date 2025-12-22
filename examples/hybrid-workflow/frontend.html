@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Workflow - Frontend</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-top: 0; }
+        h2 { color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0dcaf0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #0052a3; }
+        .code {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .metadata {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .metadata-key {
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin: 5px 0;
+        }
+        textarea {
+            min-height: 80px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Hybrid Workflow - Frontend</h1>
+        
+        <div class="info">
+            <strong>Cross-Runtime Context</strong><br>
+            This page loads a context created by the backend, allowing you to:
+            <ul>
+                <li>View backend analysis results</li>
+                <li>Extend the context with your own data</li>
+                <li>Run custom analysis with your API key</li>
+            </ul>
+        </div>
+
+        <h2>1. Load Backend Context</h2>
+        <p>The backend has preprocessed data and run initial analysis.</p>
+        <button onclick="loadBackendContext()">Load Context from Backend</button>
+        <div id="backendStatus"></div>
+
+        <div id="backendAnalysis" style="display: none;">
+            <h3>Backend Analysis Results</h3>
+            <div class="metadata">
+                <div class="metadata-key">Model:</div>
+                <div id="backendModel"></div>
+                <div class="metadata-key">Timestamp:</div>
+                <div id="backendTimestamp"></div>
+                <div class="metadata-key">Inputs:</div>
+                <div id="backendInputs"></div>
+            </div>
+            <div class="code" id="backendResult"></div>
+        </div>
+
+        <h2>2. View Loaded Context</h2>
+        <button onclick="showContext()">Show Context Details</button>
+        <div class="code" id="contextDetails" style="display: none;"></div>
+
+        <h2>3. Extend with Your Data</h2>
+        <p>Add your own inputs to the context:</p>
+        <textarea id="userInput" placeholder='{"category": "...", "data": "..."}'></textarea>
+        <input type="text" id="userRelevance" placeholder="Relevance (0.0 - 1.0)" value="0.8">
+        <button onclick="addUserInput()">Add My Input</button>
+        <div id="userInputStatus"></div>
+
+        <h2>4. Custom Analysis</h2>
+        <p>Run your own analysis on the combined context:</p>
+        <textarea id="userTask" placeholder="Analyze with focus on..."></textarea>
+        <button onclick="executeUserAnalysis()">Execute My Analysis</button>
+        
+        <div id="userAnalysisResult" style="display: none;">
+            <h3>Your Analysis Results</h3>
+            <div class="code" id="userResult"></div>
+        </div>
+
+        <h2>5. Save or Share</h2>
+        <button onclick="downloadContext()">Download Context JSON</button>
+        <button onclick="shareContext()">Generate Share Link</button>
+        <div id="shareStatus"></div>
+    </div>
+
+    <script>
+        // Simple Context implementation (matching Python version)
+        class ContextInput {
+            constructor(data, relevance = 1.0, tokens) {
+                this.data = data;
+                this.relevance = relevance;
+                this.tokens = tokens || this.estimateTokens(data);
+            }
+            estimateTokens(data) {
+                const str = typeof data === 'string' ? data : JSON.stringify(data);
+                return Math.ceil(str.length / 4);
+            }
+            toJSON() {
+                return { data: this.data, relevance: this.relevance, tokens: this.tokens };
+            }
+            static fromJSON(obj) {
+                return new ContextInput(obj.data, obj.relevance, obj.tokens);
+            }
+        }
+
+        class Context {
+            constructor(config) {
+                this.id = config.contextId || config.id || this.generateId();
+                this.intent = config.intent;
+                this.category = config.category;
+                this.inputs = [];
+                this.constraints = config.constraints || {};
+                this.routing = config.routing || {};
+                this.output = config.output || {};
+                this.metadata = config.metadata || {};
+                this.parentId = config.parentId || config.parent_id;
+                this.createdAt = config.createdAt || config.created_at || new Date().toISOString();
+            }
+
+            generateId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0;
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            }
+
+            addInput(data, options = {}) {
+                this.inputs.push(new ContextInput(data, options.relevance, options.tokens));
+                return this;
+            }
+
+            extend(config = {}) {
+                const child = new Context({
+                    intent: config.intent || this.intent,
+                    category: config.category || this.category,
+                    constraints: { ...this.constraints },
+                    routing: { ...this.routing },
+                    output: { ...this.output },
+                    metadata: { ...this.metadata },
+                    parentId: this.id
+                });
+                child.inputs = this.inputs.map(inp => ContextInput.fromJSON(inp.toJSON()));
+                return child;
+            }
+
+            getTotalTokens() {
+                return this.inputs.reduce((sum, inp) => sum + inp.tokens, 0);
+            }
+
+            async execute(request) {
+                const model = this.routing.model || 'gpt-3.5-turbo';
+                const result = `[STUB] Frontend execution\nTask: ${request.task}\nInputs: ${this.inputs.length}\nTokens: ${this.getTotalTokens()}`;
+                return {
+                    result,
+                    contextId: this.id,
+                    modelUsed: model,
+                    duration: 0.1,
+                    metadata: { intent: this.intent, inputCount: this.inputs.length }
+                };
+            }
+
+            toJSON() {
+                return {
+                    id: this.id,
+                    intent: this.intent,
+                    category: this.category,
+                    inputs: this.inputs.map(inp => inp.toJSON()),
+                    constraints: this.constraints,
+                    routing: this.routing,
+                    output: this.output,
+                    metadata: this.metadata,
+                    parent_id: this.parentId,
+                    created_at: this.createdAt
+                };
+            }
+
+            static fromJSON(data) {
+                const ctx = new Context(data);
+                ctx.inputs = (data.inputs || []).map(inp => ContextInput.fromJSON(inp));
+                return ctx;
+            }
+        }
+
+        let currentContext = null;
+        let backendData = null;
+
+        async function loadBackendContext() {
+            try {
+                // In real usage, fetch from server
+                // For demo, provide sample data
+                const sampleData = {
+                    "context": {
+                        "id": "backend-ctx-123",
+                        "intent": "analyze_trends",
+                        "category": "data_analysis",
+                        "inputs": [
+                            {"data": {"id": 1, "category": "Technology", "sentiment": 0.8}, "relevance": 0.8, "tokens": 20},
+                            {"data": {"id": 2, "category": "Business", "sentiment": 0.6}, "relevance": 0.6, "tokens": 18}
+                        ],
+                        "constraints": {"max_tokens": 4000},
+                        "routing": {"model": "gpt-3.5-turbo"},
+                        "metadata": {"created_by": "backend", "timestamp": new Date().toISOString()}
+                    },
+                    "backend_analysis": {
+                        "result": "Technology trends show high sentiment (0.8), indicating positive outlook. Business category shows moderate sentiment.",
+                        "model": "gpt-3.5-turbo",
+                        "timestamp": new Date().toISOString()
+                    }
+                };
+
+                backendData = sampleData;
+                currentContext = Context.fromJSON(sampleData.context);
+
+                // Display backend analysis
+                document.getElementById('backendModel').textContent = sampleData.backend_analysis.model;
+                document.getElementById('backendTimestamp').textContent = sampleData.backend_analysis.timestamp;
+                document.getElementById('backendInputs').textContent = currentContext.inputs.length;
+                document.getElementById('backendResult').textContent = sampleData.backend_analysis.result;
+                document.getElementById('backendAnalysis').style.display = 'block';
+
+                document.getElementById('backendStatus').innerHTML = 
+                    '<div class="success">✓ Backend context loaded successfully</div>';
+            } catch (error) {
+                document.getElementById('backendStatus').innerHTML = 
+                    `<div class="error">Error loading context: ${error.message}</div>`;
+            }
+        }
+
+        function showContext() {
+            if (!currentContext) {
+                alert('Please load backend context first');
+                return;
+            }
+            const details = document.getElementById('contextDetails');
+            details.textContent = JSON.stringify(currentContext.toJSON(), null, 2);
+            details.style.display = 'block';
+        }
+
+        function addUserInput() {
+            if (!currentContext) {
+                alert('Please load backend context first');
+                return;
+            }
+
+            const inputText = document.getElementById('userInput').value;
+            const relevance = parseFloat(document.getElementById('userRelevance').value) || 0.8;
+
+            if (!inputText) {
+                alert('Please enter input data');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(inputText);
+            } catch (e) {
+                data = inputText;
+            }
+
+            // Extend context with user data
+            const userCtx = currentContext.extend({ metadata: { user_extended: true } });
+            userCtx.addInput(data, { relevance });
+            currentContext = userCtx;
+
+            document.getElementById('userInputStatus').innerHTML = 
+                '<div class="success">✓ Added your input. Context now has ' + 
+                currentContext.inputs.length + ' inputs.</div>';
+            
+            document.getElementById('userInput').value = '';
+        }
+
+        async function executeUserAnalysis() {
+            if (!currentContext) {
+                alert('Please load backend context first');
+                return;
+            }
+
+            const task = document.getElementById('userTask').value;
+            if (!task) {
+                alert('Please enter an analysis task');
+                return;
+            }
+
+            const result = await currentContext.execute({ task });
+            
+            document.getElementById('userResult').textContent = JSON.stringify(result, null, 2);
+            document.getElementById('userAnalysisResult').style.display = 'block';
+        }
+
+        function downloadContext() {
+            if (!currentContext) {
+                alert('Please load backend context first');
+                return;
+            }
+
+            const dataStr = JSON.stringify(currentContext.toJSON(), null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'context.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function shareContext() {
+            if (!currentContext) {
+                alert('Please load backend context first');
+                return;
+            }
+
+            const contextJson = JSON.stringify(currentContext.toJSON());
+            const encoded = btoa(contextJson);
+            const shareUrl = `${window.location.href}?ctx=${encoded}`;
+            
+            document.getElementById('shareStatus').innerHTML = 
+                `<div class="success">Share URL (would be): ${shareUrl.substring(0, 100)}...</div>`;
+        }
+
+        // Auto-load on page load
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ctxParam = urlParams.get('ctx');
+            if (ctxParam) {
+                try {
+                    const decoded = atob(ctxParam);
+                    const data = JSON.parse(decoded);
+                    currentContext = Context.fromJSON(data);
+                    alert('Context loaded from URL');
+                } catch (e) {
+                    console.error('Failed to load context from URL', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

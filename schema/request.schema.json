@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionRequest",
+  "description": "Request for context execution",
+  "type": "object",
+  "properties": {
+    "task": {
+      "type": "string",
+      "description": "Task description or prompt"
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "Optional system prompt"
+    },
+    "additional_inputs": {
+      "type": "array",
+      "description": "Additional inputs for this execution",
+      "items": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "relevance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "override_routing": {
+      "type": "object",
+      "description": "Override routing for this execution",
+      "properties": {
+        "model": { "type": "string" },
+        "provider": { "type": "string" },
+        "temperature": { "type": "number" }
+      }
+    }
+  },
+  "required": ["task"]
+}

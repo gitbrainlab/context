@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Browser Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            font-family: monospace;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .output {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #0dcaf0;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .input-item {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .relevance {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Context Browser Example</h1>
+        
+        <div class="info">
+            <strong>Browser-Based LLM Analysis</strong><br>
+            This example demonstrates using Context in a browser environment. 
+            You provide your own API key (never stored on a server).
+        </div>
+
+        <div class="section">
+            <h2>1. Configure Context</h2>
+            
+            <label>Intent:</label>
+            <select id="intent">
+                <option value="analyze">Analyze</option>
+                <option value="summarize">Summarize</option>
+                <option value="extract">Extract</option>
+                <option value="classify">Classify</option>
+            </select>
+
+            <label style="margin-top: 10px;">Strategy:</label>
+            <select id="strategy">
+                <option value="cost_optimized">Cost Optimized</option>
+                <option value="quality_optimized">Quality Optimized</option>
+                <option value="speed_optimized">Speed Optimized</option>
+            </select>
+
+            <label style="margin-top: 10px;">Max Tokens:</label>
+            <input type="text" id="maxTokens" value="2000" placeholder="2000">
+        </div>
+
+        <div class="section">
+            <h2>2. Add Inputs</h2>
+            
+            <label>Input Data:</label>
+            <textarea id="inputData" placeholder='{"title": "Example", "content": "..."}'></textarea>
+            
+            <label style="margin-top: 10px;">Relevance (0.0 - 1.0):</label>
+            <input type="text" id="relevance" value="1.0" placeholder="1.0">
+            
+            <button onclick="addInput()">Add Input</button>
+            <button onclick="clearInputs()">Clear All Inputs</button>
+            
+            <div id="inputsList" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Execute Context</h2>
+            
+            <div class="warning">
+                <strong>Note:</strong> This is a demonstration. The execution is stubbed and doesn't make real API calls.
+                To enable real execution, implement provider adapters and provide your API key.
+            </div>
+            
+            <label>Task / Prompt:</label>
+            <textarea id="task" placeholder="Analyze these items and identify patterns..."></textarea>
+            
+            <label style="margin-top: 10px;">Your API Key (optional):</label>
+            <input type="text" id="apiKey" placeholder="sk-...">
+            
+            <button onclick="executeContext()" style="margin-top: 10px;">Execute Context</button>
+            <button onclick="showContext()">Show Context JSON</button>
+        </div>
+
+        <div class="section">
+            <h2>Output</h2>
+            <div id="output" class="output">Results will appear here...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Simple in-browser Context implementation (stub for demo)
+        class ContextInput {
+            constructor(data, relevance = 1.0, tokens) {
+                this.data = data;
+                this.relevance = relevance;
+                this.tokens = tokens || this.estimateTokens(data);
+            }
+
+            estimateTokens(data) {
+                const str = typeof data === 'string' ? data : JSON.stringify(data);
+                return Math.ceil(str.length / 4);
+            }
+
+            toJSON() {
+                return {
+                    data: this.data,
+                    relevance: this.relevance,
+                    tokens: this.tokens
+                };
+            }
+        }
+
+        class Context {
+            constructor(config) {
+                this.id = this.generateId();
+                this.intent = config.intent;
+                this.inputs = [];
+                this.constraints = config.constraints || {};
+                this.routing = config.routing || {};
+                this.output = config.output || {};
+                this.metadata = config.metadata || {};
+                this.createdAt = new Date();
+            }
+
+            generateId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            addInput(data, options = {}) {
+                this.inputs.push(new ContextInput(data, options.relevance, options.tokens));
+                return this;
+            }
+
+            prune(options = {}) {
+                const maxTokens = options.maxTokens || this.constraints.maxTokens;
+                const relevanceThreshold = options.relevanceThreshold || 0.0;
+
+                // Filter by relevance
+                let filtered = this.inputs.filter(inp => inp.relevance >= relevanceThreshold);
+
+                // Sort by relevance
+                filtered.sort((a, b) => b.relevance - a.relevance);
+
+                if (!maxTokens) {
+                    this.inputs = filtered;
+                    return this;
+                }
+
+                // Take until token limit
+                const pruned = [];
+                let totalTokens = 0;
+
+                for (const inp of filtered) {
+                    if (totalTokens + inp.tokens <= maxTokens) {
+                        pruned.push(inp);
+                        totalTokens += inp.tokens;
+                    } else {
+                        break;
+                    }
+                }
+
+                this.inputs = pruned;
+                return this;
+            }
+
+            route(options = {}) {
+                if (options.strategy) {
+                    this.routing.model = this.selectByStrategy(options.strategy);
+                }
+                if (options.model) {
+                    this.routing.model = options.model;
+                }
+                if (options.provider) {
+                    this.routing.provider = options.provider;
+                }
+                return this;
+            }
+
+            selectByStrategy(strategy) {
+                const models = {
+                    'cost_optimized': 'gpt-3.5-turbo',
+                    'quality_optimized': 'gpt-4',
+                    'speed_optimized': 'gpt-3.5-turbo'
+                };
+                return models[strategy] || 'gpt-3.5-turbo';
+            }
+
+            async execute(request) {
+                const startTime = Date.now();
+                const model = this.routing.model || 'gpt-3.5-turbo';
+                const provider = this.routing.provider || 'openai';
+
+                // Stub execution
+                const result = `[STUB] Execution result from ${provider}/${model}\n` +
+                             `Task: ${request.task}\n` +
+                             `Inputs: ${this.inputs.length} items\n` +
+                             `Total tokens: ${this.getTotalTokens()}\n\n` +
+                             `To enable real execution, implement provider adapters and provide API key.`;
+
+                return {
+                    result,
+                    contextId: this.id,
+                    modelUsed: model,
+                    providerUsed: provider,
+                    duration: (Date.now() - startTime) / 1000,
+                    metadata: {
+                        intent: this.intent,
+                        inputCount: this.inputs.length,
+                        totalInputTokens: this.getTotalTokens()
+                    }
+                };
+            }
+
+            getTotalTokens() {
+                return this.inputs.reduce((sum, inp) => sum + inp.tokens, 0);
+            }
+
+            toJSON() {
+                return {
+                    id: this.id,
+                    intent: this.intent,
+                    inputs: this.inputs.map(inp => inp.toJSON()),
+                    constraints: this.constraints,
+                    routing: this.routing,
+                    output: this.output,
+                    metadata: this.metadata,
+                    createdAt: this.createdAt.toISOString()
+                };
+            }
+        }
+
+        // Make Context available globally
+        window.Context = Context;
+        window.currentContext = null;
+
+        // UI functions
+        window.addInput = function() {
+            const dataText = document.getElementById('inputData').value;
+            const relevance = parseFloat(document.getElementById('relevance').value) || 1.0;
+
+            if (!dataText) {
+                alert('Please enter input data');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(dataText);
+            } catch (e) {
+                data = dataText; // Use as plain text if not JSON
+            }
+
+            if (!window.currentContext) {
+                window.currentContext = createContext();
+            }
+
+            window.currentContext.addInput(data, { relevance });
+            updateInputsList();
+            
+            // Clear input field
+            document.getElementById('inputData').value = '';
+        };
+
+        window.clearInputs = function() {
+            window.currentContext = null;
+            updateInputsList();
+        };
+
+        window.executeContext = function() {
+            const task = document.getElementById('task').value;
+            if (!task) {
+                alert('Please enter a task');
+                return;
+            }
+
+            if (!window.currentContext || window.currentContext.inputs.length === 0) {
+                alert('Please add at least one input');
+                return;
+            }
+
+            const ctx = window.currentContext;
+            
+            // Apply strategy
+            const strategy = document.getElementById('strategy').value;
+            ctx.route({ strategy });
+
+            // Prune if needed
+            const maxTokens = parseInt(document.getElementById('maxTokens').value) || 2000;
+            if (ctx.getTotalTokens() > maxTokens) {
+                ctx.prune({ maxTokens });
+            }
+
+            // Execute
+            ctx.execute({ task }).then(result => {
+                const output = document.getElementById('output');
+                output.textContent = JSON.stringify({
+                    result: result.result,
+                    metadata: result.metadata,
+                    modelUsed: result.modelUsed,
+                    duration: result.duration
+                }, null, 2);
+            });
+        };
+
+        window.showContext = function() {
+            if (!window.currentContext) {
+                window.currentContext = createContext();
+            }
+            
+            const output = document.getElementById('output');
+            output.textContent = JSON.stringify(window.currentContext.toJSON(), null, 2);
+        };
+
+        function createContext() {
+            const intent = document.getElementById('intent').value;
+            const maxTokens = parseInt(document.getElementById('maxTokens').value) || 2000;
+            const strategy = document.getElementById('strategy').value;
+
+            return new Context({
+                intent,
+                constraints: { maxTokens },
+                routing: {},
+                metadata: {
+                    source: 'browser-example'
+                }
+            });
+        }
+
+        function updateInputsList() {
+            const list = document.getElementById('inputsList');
+            
+            if (!window.currentContext || window.currentContext.inputs.length === 0) {
+                list.innerHTML = '<p style="color: #999;">No inputs added yet</p>';
+                return;
+            }
+
+            list.innerHTML = window.currentContext.inputs.map((inp, idx) => {
+                const preview = typeof inp.data === 'string' 
+                    ? inp.data.substring(0, 50) + (inp.data.length > 50 ? '...' : '')
+                    : JSON.stringify(inp.data).substring(0, 50) + '...';
+                
+                return `
+                    <div class="input-item">
+                        <div>
+                            <strong>Input ${idx + 1}:</strong> ${preview}<br>
+                            <span class="relevance">Relevance: ${inp.relevance.toFixed(2)}, Tokens: ${inp.tokens}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initialize
+        updateInputsList();
+    </script>
+</body>
+</html>

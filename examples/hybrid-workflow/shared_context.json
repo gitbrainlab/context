@@ -1,0 +1,85 @@
+{
+  "context": {
+    "id": "b4a77020-96bd-4fa9-93a4-2e44f3cc83c1",
+    "intent": "analyze_trends",
+    "category": "data_analysis",
+    "inputs": [
+      {
+        "data": {
+          "id": 1,
+          "category": "Technology",
+          "sentiment": 0.8,
+          "keywords": [
+            "AI",
+            "machine learning",
+            "innovation"
+          ]
+        },
+        "relevance": 0.8,
+        "tokens": 26
+      },
+      {
+        "data": {
+          "id": 2,
+          "category": "Business",
+          "sentiment": 0.6,
+          "keywords": [
+            "growth",
+            "strategy",
+            "markets"
+          ]
+        },
+        "relevance": 0.6,
+        "tokens": 24
+      },
+      {
+        "data": {
+          "id": 3,
+          "category": "Technology",
+          "sentiment": 0.9,
+          "keywords": [
+            "cloud",
+            "scalability",
+            "infrastructure"
+          ]
+        },
+        "relevance": 0.9,
+        "tokens": 27
+      },
+      {
+        "data": {
+          "id": 4,
+          "category": "Finance",
+          "sentiment": 0.4,
+          "keywords": [
+            "risk",
+            "volatility",
+            "uncertainty"
+          ]
+        },
+        "relevance": 0.4,
+        "tokens": 25
+      }
+    ],
+    "constraints": {
+      "max_tokens": 4000,
+      "max_cost": 0.05
+    },
+    "routing": {
+      "strategy": "cost_optimized"
+    },
+    "output": {},
+    "metadata": {
+      "created_by": "backend",
+      "pipeline_version": "1.0",
+      "timestamp": "2025-12-21T21:48:24.112063"
+    },
+    "parent_id": null,
+    "created_at": "2025-12-21T21:48:24.112098"
+  },
+  "backend_analysis": {
+    "result": "[STUB] Execution result from openai/gpt-3.5-turbo\nPrompt length: 575 chars\nTo enable actual execution, implement provider adapters and provide API keys.",
+    "model": "gpt-3.5-turbo",
+    "timestamp": "2025-12-21T21:48:24.112256"
+  }
+}

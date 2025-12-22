@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Context",
+  "description": "Core Context execution abstraction schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique context identifier"
+    },
+    "intent": {
+      "type": "string",
+      "description": "Categorical intent for this execution",
+      "examples": ["analyze", "summarize", "extract", "classify", "generate"]
+    },
+    "category": {
+      "type": "string",
+      "description": "Discrete category for this execution context"
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Execution inputs with relevance scores",
+      "items": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Input data (any type)"
+          },
+          "relevance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Relevance score for this input"
+          },
+          "tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Estimated token count for this input"
+          }
+        },
+        "required": ["data"]
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Hard limits for execution",
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens for this context"
+        },
+        "max_time": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum execution time in seconds"
+        },
+        "max_cost": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum cost in USD"
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "Routing hints for execution",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Model identifier",
+          "examples": ["gpt-4", "gpt-3.5-turbo", "claude-3-opus"]
+        },
+        "provider": {
+          "type": "string",
+          "description": "Provider identifier",
+          "examples": ["openai", "anthropic", "local"]
+        },
+        "strategy": {
+          "type": "string",
+          "description": "Execution strategy",
+          "examples": ["cost_optimized", "quality_optimized", "speed_optimized"]
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Model temperature parameter"
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum output tokens"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Output shaping configuration",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["json", "markdown", "text", "html"],
+          "description": "Output format"
+        },
+        "schema": {
+          "type": "object",
+          "description": "Output schema for structured formats"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata",
+      "additionalProperties": true
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Parent context ID if this is an extension"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Creation timestamp"
+    }
+  },
+  "required": ["id", "intent"]
+}
