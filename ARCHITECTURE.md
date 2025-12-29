@@ -194,8 +194,8 @@ context/
 │   └── local/
 ├── docs/                  # Documentation
 │   ├── getting-started.md
-│   ├── api-reference.md
-│   ├── migration-guide.md
+│   ├── reference.md
+│   ├── migration.md
 │   └── examples/
 ├── examples/              # Example implementations
 │   ├── backend-automation/

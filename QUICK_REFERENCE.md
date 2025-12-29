@@ -297,7 +297,7 @@ from datetime import timezone
 ## Next Steps
 
 1. Review [Getting Started](docs/getting-started.md)
-2. Check [API Reference](docs/api-reference.md)
-3. Read [Migration Guide](docs/migration-guide.md)
+2. Check [API Reference](docs/reference.md)
+3. Read [Migration Guide](docs/migration.md)
 4. Try [Examples](examples/)
 5. Read [Architecture](ARCHITECTURE.md)
