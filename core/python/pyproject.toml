@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "evcatalyst", email = "context@evcatalyst.dev"}
+    {name = "gitbrainlab", email = "context@gitbrainlab.dev"}
 ]
 keywords = ["llm", "context", "execution", "abstraction"]
 classifiers = [
@@ -26,9 +26,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/evcatalyst/context"
-Repository = "https://github.com/evcatalyst/context"
-Documentation = "https://github.com/evcatalyst/context/blob/main/docs"
+Homepage = "https://github.com/gitbrainlab/context"
+Repository = "https://github.com/gitbrainlab/context"
+Documentation = "https://github.com/gitbrainlab/context/blob/main/docs"
 
 [tool.setuptools]
 packages = ["context"]

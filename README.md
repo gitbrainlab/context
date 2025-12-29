@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Context (`ctx`) is a cross-runtime execution abstraction that shapes how LLM requests are executed across backend automation (GitHub Actions, scheduled jobs, Python) and frontend browser environments (TypeScript/JavaScript).
+Context is a lightweight, serializable execution abstraction that shapes how LLM requests are executed. It provides a consistent API across Python (backend automation, GitHub Actions, scheduled jobs) and TypeScript/JavaScript (browser, Node.js) runtimes, enabling seamless workflows from backend to frontend.
 
 ## What Context Does
 
@@ -55,7 +55,7 @@ result = ctx.execute(
 ### TypeScript
 
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // Create a context
 const ctx = new Context({
@@ -155,12 +155,44 @@ npm install
 npm run build
 ```
 
+## Security & Best Practices
+
+### Bring Your Own Key
+
+Context **does not** manage authentication or store API keys. Users must provide their own API keys when executing contexts:
+
+```python
+# Backend: Use environment variables
+result = ctx.execute(
+    task="Analyze data",
+    api_key=os.environ["OPENAI_API_KEY"]
+)
+```
+
+```typescript
+// Frontend: User provides their key
+const apiKey = await promptUserForApiKey();
+const result = await ctx.execute({ task: "Analyze data", apiKey });
+```
+
+### Design Constraints
+
+Context is designed with the following constraints in mind:
+
+1. **Token Limits**: Always set `max_tokens` in constraints to avoid unexpected costs
+2. **Privacy**: No data is sent to Context servers (there are none) - all execution happens directly with LLM providers
+3. **Rate Limits**: Context does not handle rate limiting - applications should implement their own retry logic
+4. **Cost Control**: Use `max_cost` constraints and `cost_optimized` routing strategy to manage expenses
+5. **No Server Required**: Context is a client-side abstraction - no backend service needed
+
 ## Documentation
 
-- [Getting Started](docs/getting-started.md)
-- [Architecture](ARCHITECTURE.md)
-- [Migration Guide](docs/migration-guide.md)
-- [Examples](examples/)
+- [Getting Started](docs/getting-started.md) - Installation and first steps
+- [Concept Model & Glossary](docs/index.md) - Understanding Context architecture
+- [Architecture](docs/architecture.md) - Cross-runtime design and serialization
+- [API Reference](docs/reference.md) - Complete API documentation
+- [Examples](docs/examples.md) - Practical usage patterns
+- [Migration Guide](docs/migration.md) - Migrating from direct LLM calls
 
 ## Repository Structure
 
@@ -283,10 +315,9 @@ MIT
 
 ## Related Projects
 
-Context is designed to be adopted by projects in the evcatalyst organization:
+Context is designed to be adopted by projects that need cross-runtime LLM execution:
 
-- **ShelfSignals**: Collection intelligence and metadata analysis
-- **ChartSpec**: Data visualization specifications
-- Other data analysis and automation tools
-
-These projects demonstrate the patterns that Context abstracts.
+- **Data analysis tools**: Catalog analysis, metadata extraction
+- **Visualization tools**: Chart recommendations, data exploration
+- **Automation tools**: GitHub Actions workflows, scheduled jobs
+- **Browser applications**: User-driven analysis with personal API keys

@@ -153,7 +153,7 @@ async function analyzeText(text: string, apiKey: string) {
 
 **After:**
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 async function analyzeText(text: string, apiKey: string) {
   const ctx = new Context({

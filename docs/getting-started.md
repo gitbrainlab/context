@@ -59,7 +59,7 @@ print(result)
 ### TypeScript
 
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // Create a context
 const ctx = new Context({

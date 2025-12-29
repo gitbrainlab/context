@@ -1,5 +1,7 @@
 # Context Architecture
 
+> **Note**: This document has been superseded by [docs/architecture.md](docs/architecture.md) which includes updated diagrams and detailed explanations. This file is kept for backwards compatibility.
+
 ## Overview
 
 Context is a lightweight, cross-runtime execution abstraction that shapes how LLM requests are executed across backend automation and frontend browser environments.
