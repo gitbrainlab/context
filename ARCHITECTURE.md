@@ -130,7 +130,7 @@ new_ctx = Context.from_json(json_str)
 
 ### TypeScript/JavaScript API
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // Create context
 const ctx = new Context({

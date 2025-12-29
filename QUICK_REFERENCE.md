@@ -32,7 +32,7 @@ ctx = Context(
 
 **TypeScript:**
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 const ctx = new Context({
   intent: 'analyze',
@@ -186,7 +186,7 @@ with open("context.json", "w") as f:
 ### Browser Analysis (User Keys)
 
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 const ctx = new Context({
   intent: 'visualize_data',

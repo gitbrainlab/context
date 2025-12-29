@@ -303,7 +303,7 @@ ctx = Context(intent="analyze", routing={"model": "gpt-4"})
 result = ctx.execute(task="...")
 ```
 
-See the [Migration Guide](docs/migration-guide.md) for detailed migration paths.
+See the [Migration Guide](docs/migration.md) for detailed migration paths.
 
 ## Contributing
 

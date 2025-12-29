@@ -221,5 +221,5 @@ After reviewing examples:
 
 1. Try modifying the examples for your use case
 2. Review the [Getting Started Guide](../docs/getting-started.md)
-3. Check the [API Reference](../docs/api-reference.md)
-4. Read the [Migration Guide](../docs/migration-guide.md) for adopting Context in existing projects
+3. Check the [API Reference](../docs/reference.md)
+4. Read the [Migration Guide](../docs/migration.md) for adopting Context in existing projects

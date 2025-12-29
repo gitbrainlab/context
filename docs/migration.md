@@ -354,7 +354,7 @@ Context doesn't lock you in:
 
 If you encounter issues during migration:
 
-1. Check the [API Reference](api-reference.md)
+1. Check the [API Reference](reference.md)
 2. Review [Examples](examples/)
 3. Open an issue with your specific use case
 4. Share your context JSON for debugging
