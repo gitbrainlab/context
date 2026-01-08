@@ -1,0 +1,19 @@
+{
+  "prompt_id": "115c94e4-dc59-4234-9c12-98511573b24e",
+  "timestamp_start": "2026-01-08T19:25:46.081069+00:00",
+  "timestamp_end": "2026-01-08T19:25:46.081429+00:00",
+  "user": "matthew",
+  "prompt": "build me a custom weekend planning tool",
+  "instructions_source": "default",
+  "model": "gpt-4o-mini",
+  "budget_usd": 0.05,
+  "estimated_max_tokens": 86021,
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 200,
+    "total_tokens": 300
+  },
+  "cost_usd": 0.0001,
+  "output_path": "/home/runner/work/context/context/core/python/.context/copilot/115c94e4-dc59-4234-9c12-98511573b24e.md",
+  "error": null
+}

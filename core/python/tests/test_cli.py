@@ -7,7 +7,7 @@ import os
 import pathlib
 import tempfile
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -403,8 +403,8 @@ class TestDashboardGeneration:
             assert output_path.exists()
             
             content = output_path.read_text()
-            assert "Weekend Planning Tool" in content
-            assert "Activities" in content
+            assert "Planning Tool" in content
+            assert "Plan" in content
             assert "Hiking" in content
     
     def test_generate_dashboard_general(self):
@@ -553,3 +553,72 @@ class TestLogging:
         
         assert result.exit_code == 1
         assert "Log written" in result.stdout
+
+
+class TestPromptParsingBritishSpellings:
+    """Tests for British spelling support in prompt parsing."""
+    
+    def test_parse_analyse_british(self):
+        """Test detection of British spelling 'analyse'."""
+        hints = parse_prompt_hints("analyse this dataset")
+        assert hints["task_type"] == "analysis"
+        assert "analysis" in hints["keywords"]
+    
+    def test_parse_summarise_british(self):
+        """Test detection of British spelling 'summarise'."""
+        hints = parse_prompt_hints("summarise this document")
+        assert hints["task_type"] == "summarization"
+        assert "summarization" in hints["keywords"]
+
+
+class TestBudgetEdgeCases:
+    """Tests for edge cases in budget calculations."""
+    
+    def test_very_small_budget_returns_minimum_tokens(self):
+        """Test that very small budget returns at least 1 token."""
+        max_tokens = budget_to_max_tokens(0.0001, "gpt-4o-mini")
+        assert max_tokens >= 1
+    
+    def test_zero_budget_returns_minimum_tokens(self):
+        """Test that zero budget returns at least 1 token."""
+        max_tokens = budget_to_max_tokens(0.0, "gpt-4o-mini")
+        assert max_tokens >= 1
+    
+    def test_unknown_model_uses_fallback_pricing(self):
+        """Test that unknown model falls back to gpt-4o-mini pricing."""
+        max_tokens_unknown = budget_to_max_tokens(0.05, "unknown-model")
+        max_tokens_default = budget_to_max_tokens(0.05, "gpt-4o-mini")
+        assert max_tokens_unknown == max_tokens_default
+
+
+class TestInstructionsFileErrorHandling:
+    """Tests for instructions file error handling."""
+    
+    def test_missing_instructions_file_raises_error(self):
+        """Test that missing instructions file raises ValueError."""
+        with pytest.raises(ValueError, match="Instructions file not found"):
+            config = CopilotRunConfig(
+                prompt="test",
+                user="matthew",
+                budget=0.05,
+                instructions_file=pathlib.Path("/nonexistent/file.txt"),
+            )
+            # Access the property to trigger file read
+            _ = config.user_instructions
+    
+    def test_valid_instructions_file_works(self):
+        """Test that valid instructions file is read correctly."""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+            f.write("test instructions content")
+            temp_path = pathlib.Path(f.name)
+        
+        try:
+            config = CopilotRunConfig(
+                prompt="test",
+                user="matthew",
+                budget=0.05,
+                instructions_file=temp_path,
+            )
+            assert config.user_instructions == "test instructions content"
+        finally:
+            temp_path.unlink()

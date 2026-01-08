@@ -114,8 +114,8 @@ def parse_prompt_hints(prompt: str) -> dict:
         hints["task_type"] = "planner"
         hints["keywords"].append("planning")
     
-    # Detect analysis requests
-    elif re.search(r'\b(analyz[e]?|analysis|examine|inspect|investigate)\b', prompt_lower):
+    # Detect analysis requests (supports both American and British spellings)
+    elif re.search(r'\b(analy[sz]e|analysis|examine|inspect|investigate)\b', prompt_lower):
         hints["task_type"] = "analysis"
         hints["keywords"].append("analysis")
     
@@ -124,8 +124,8 @@ def parse_prompt_hints(prompt: str) -> dict:
         hints["task_type"] = "generation"
         hints["keywords"].append("generation")
     
-    # Detect summarization requests
-    elif re.search(r'\b(summariz[e]?|summary|brief|overview)\b', prompt_lower):
+    # Detect summarization requests (supports both American and British spellings)
+    elif re.search(r'\b(summari[sz]e|summary|brief|overview)\b', prompt_lower):
         hints["task_type"] = "summarization"
         hints["keywords"].append("summarization")
     
@@ -146,6 +146,10 @@ def budget_to_max_tokens(budget_usd: float, model: str = "gpt-4o-mini") -> int:
     
     # Calculate max tokens with 20% safety margin
     max_tokens = int((budget_usd * 0.8) / avg_price_per_token)
+    
+    # Ensure at least 1 token
+    if max_tokens < 1:
+        max_tokens = 1
     
     return max_tokens
 
@@ -214,8 +218,15 @@ def call_litellm(
         headers["Authorization"] = f"Bearer {virtual_key}"
     
     # Make HTTP POST to LiteLLM proxy
+    # Allow configurable timeout for long-running LLM requests
+    timeout_env = os.getenv("CONTEXT_HTTP_TIMEOUT", "180")
     try:
-        with httpx.Client(timeout=60.0) as client:
+        timeout_seconds = float(timeout_env)
+    except ValueError:
+        timeout_seconds = 180.0
+    
+    try:
+        with httpx.Client(timeout=timeout_seconds) as client:
             response = client.post(
                 f"{proxy_url}/chat/completions",
                 json=payload,
@@ -239,11 +250,11 @@ def call_litellm(
         return LLMResponse(content=content, usage=usage, cost_usd=cost_usd)
     
     except httpx.HTTPStatusError as e:
-        raise Exception(f"LiteLLM API error: {e.response.status_code} - {e.response.text}")
+        raise Exception(f"LiteLLM API error: {e.response.status_code} - {e.response.text}") from e
     except httpx.RequestError as e:
-        raise Exception(f"LiteLLM connection error: {e}")
+        raise Exception(f"LiteLLM connection error: {e}") from e
     except (KeyError, IndexError) as e:
-        raise Exception(f"Invalid LiteLLM response format: {e}")
+        raise Exception(f"Invalid LiteLLM response format: {e}") from e
 
 
 def generate_dashboard(
@@ -269,12 +280,12 @@ def generate_dashboard(
     # Create structured markdown based on task type
     if task_type == "planner":
         # Extract sections for planner
-        markdown = f"""# Weekend Planning Tool
+        markdown = f"""# Planning Tool
 
 ## Request
 {prompt}
 
-## Activities
+## Plan
 {content}
 
 ## Notes
@@ -348,9 +359,12 @@ class CopilotRunConfig(BaseModel):
         if self.instructions_file is not None:
             try:
                 return self.instructions_file.read_text()
-            except (FileNotFoundError, PermissionError, UnicodeDecodeError):
-                # If file doesn't exist or can't be read, return empty
-                return ""
+            except FileNotFoundError:
+                raise ValueError(f"Instructions file not found: {self.instructions_file}")
+            except PermissionError:
+                raise ValueError(f"Permission denied reading instructions file: {self.instructions_file}")
+            except UnicodeDecodeError:
+                raise ValueError(f"Invalid encoding in instructions file: {self.instructions_file}")
         
         return ""
     

@@ -1,0 +1,19 @@
+{
+  "prompt_id": "1ae5c996-b364-437c-aa83-5d6934d24185",
+  "timestamp_start": "2026-01-08T19:25:46.094479+00:00",
+  "timestamp_end": "2026-01-08T19:25:46.094784+00:00",
+  "user": "matthew",
+  "prompt": "test",
+  "instructions_source": "file",
+  "model": "gpt-4o-mini",
+  "budget_usd": 0.05,
+  "estimated_max_tokens": 86021,
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  },
+  "cost_usd": 5e-05,
+  "output_path": "/home/runner/work/context/context/core/python/.context/copilot/1ae5c996-b364-437c-aa83-5d6934d24185.md",
+  "error": null
+}
