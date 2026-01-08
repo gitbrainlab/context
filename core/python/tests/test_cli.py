@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import tempfile
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch, Mock
 
 import pytest
@@ -434,3 +435,121 @@ class TestDashboardGeneration:
             content = output_path.read_text()
             assert "Task: Analysis" in content
             assert "Analysis complete" in content
+
+
+class TestLogging:
+    """Tests for structured logging."""
+    
+    def test_copilot_run_log_creation(self):
+        """Test creating CopilotRunLog."""
+        from context.cli import CopilotRunLog
+        
+        log = CopilotRunLog(
+            prompt_id="test-123",
+            timestamp_start=datetime.now(timezone.utc),
+            timestamp_end=datetime.now(timezone.utc),
+            user="matthew",
+            prompt="test prompt",
+            instructions_source="flag",
+            model="gpt-4o-mini",
+            budget_usd=0.05,
+            estimated_max_tokens=1000,
+            usage=UsageMetadata(prompt_tokens=100, completion_tokens=200, total_tokens=300),
+            cost_usd=0.0001,
+            output_path="/tmp/test.md",
+            error=None,
+        )
+        
+        assert log.prompt_id == "test-123"
+        assert log.user == "matthew"
+        assert log.usage.total_tokens == 300
+        assert log.error is None
+    
+    def test_copilot_run_log_with_error(self):
+        """Test creating CopilotRunLog with error."""
+        from context.cli import CopilotRunLog
+        
+        log = CopilotRunLog(
+            prompt_id="test-123",
+            timestamp_start=datetime.now(timezone.utc),
+            timestamp_end=datetime.now(timezone.utc),
+            user="matthew",
+            prompt="test prompt",
+            instructions_source="default",
+            model="gpt-4o-mini",
+            budget_usd=0.05,
+            estimated_max_tokens=1000,
+            usage=None,
+            cost_usd=None,
+            output_path=None,
+            error="LiteLLM connection error",
+        )
+        
+        assert log.error == "LiteLLM connection error"
+        assert log.usage is None
+        assert log.cost_usd is None
+    
+    def test_write_log(self):
+        """Test writing log to file."""
+        from context.cli import CopilotRunLog, write_log
+        
+        log = CopilotRunLog(
+            prompt_id="test-456",
+            timestamp_start=datetime.now(timezone.utc),
+            timestamp_end=datetime.now(timezone.utc),
+            user="matthew",
+            prompt="test prompt",
+            instructions_source="file",
+            model="gpt-4o-mini",
+            budget_usd=0.05,
+            estimated_max_tokens=1000,
+            usage=UsageMetadata(prompt_tokens=100, completion_tokens=200, total_tokens=300),
+            cost_usd=0.0001,
+            output_path="/tmp/test.md",
+            error=None,
+        )
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_dir = pathlib.Path(tmpdir) / "logs"
+            log_path = write_log(log, log_dir)
+            
+            assert log_path.exists()
+            assert log_path.name == "test-456.json"
+            
+            # Verify log content
+            log_data = json.loads(log_path.read_text())
+            assert log_data["prompt_id"] == "test-456"
+            assert log_data["user"] == "matthew"
+            assert log_data["usage"]["total_tokens"] == 300
+    
+    @patch('context.cli.call_litellm')
+    def test_cli_writes_log_on_success(self, mock_call_litellm):
+        """Test that CLI writes log on successful run."""
+        # Mock LiteLLM response
+        mock_usage = UsageMetadata(prompt_tokens=100, completion_tokens=200, total_tokens=300)
+        mock_response = LLMResponse(content="Test response", usage=mock_usage, cost_usd=0.0001)
+        mock_call_litellm.return_value = mock_response
+        
+        with patch.dict(os.environ, {"CONTEXT_VIRTUAL_KEY_MATTHEW": "test-key"}):
+            result = runner.invoke(app, [
+                "copilot", "run",
+                "--prompt", "test",
+                "--user", "matthew",
+                "--budget", "0.05",
+            ])
+        
+        assert result.exit_code == 0
+        assert "Log written" in result.stdout
+    
+    def test_cli_writes_log_on_failure(self):
+        """Test that CLI writes log on failure."""
+        # Missing virtual key should cause failure
+        result = runner.invoke(app, [
+            "copilot", "run",
+            "--prompt", "test",
+            "--user", "matthew",
+            "--budget", "0.05",
+        ])
+        
+        assert result.exit_code == 1
+        assert "Log written" in result.stdout

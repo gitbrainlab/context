@@ -52,6 +52,50 @@ class LLMResponse(BaseModel):
     cost_usd: float
 
 
+class CopilotRunLog(BaseModel):
+    """Structured log for copilot run."""
+    prompt_id: str
+    timestamp_start: datetime
+    timestamp_end: datetime
+    user: str
+    prompt: str
+    instructions_source: Literal["flag", "file", "default"]
+    model: str
+    budget_usd: float
+    estimated_max_tokens: int
+    usage: Optional[UsageMetadata] = None
+    cost_usd: Optional[float] = None
+    output_path: Optional[str] = None
+    error: Optional[str] = None
+
+
+def write_log(log: CopilotRunLog, log_dir: pathlib.Path = None) -> pathlib.Path:
+    """
+    Write copilot run log to JSON file.
+    
+    Args:
+        log: CopilotRunLog instance
+        log_dir: Directory to write logs (defaults to .context/logs/copilot)
+    
+    Returns:
+        Path to log file
+    """
+    if log_dir is None:
+        log_dir = pathlib.Path.cwd() / ".context" / "logs" / "copilot"
+    
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{log.prompt_id}.json"
+    
+    # Custom serialization to handle datetime
+    log_dict = log.model_dump()
+    log_dict["timestamp_start"] = log.timestamp_start.isoformat()
+    log_dict["timestamp_end"] = log.timestamp_end.isoformat()
+    
+    log_path.write_text(json.dumps(log_dict, indent=2))
+    
+    return log_path
+
+
 def parse_prompt_hints(prompt: str) -> dict:
     """
     Extract high-level task hints from natural-language prompt.
@@ -340,6 +384,11 @@ def copilot_run(
         context copilot run --prompt "build me a custom weekend planning tool" --user matthew --budget 0.05
     """
     timestamp_start = datetime.now(timezone.utc)
+    config = None
+    error_msg = None
+    llm_response = None
+    output_path = None
+    max_tokens = 0
     
     try:
         # Parse and validate configuration
@@ -350,6 +399,14 @@ def copilot_run(
             instructions=instructions,
             instructions_file=instructions_file,
         )
+        
+        # Determine instructions source
+        if instructions is not None:
+            instructions_source = "flag"
+        elif instructions_file is not None:
+            instructions_source = "file"
+        else:
+            instructions_source = "default"
         
         # Print configuration
         typer.echo(f"Configuration: {config.model_dump_json(indent=2)}")
@@ -412,11 +469,38 @@ def copilot_run(
         typer.echo("-" * 60)
         
     except ValueError as e:
+        error_msg = str(e)
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
     except Exception as e:
+        error_msg = str(e)
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
+    finally:
+        # Always write log, even on failure
+        timestamp_end = datetime.now(timezone.utc)
+        
+        if config is not None:
+            log = CopilotRunLog(
+                prompt_id=str(config.prompt_id),
+                timestamp_start=timestamp_start,
+                timestamp_end=timestamp_end,
+                user=config.user,
+                prompt=config.prompt,
+                instructions_source=instructions_source,
+                model=config.model,
+                budget_usd=config.budget,
+                estimated_max_tokens=max_tokens,
+                usage=llm_response.usage if llm_response else None,
+                cost_usd=llm_response.cost_usd if llm_response else None,
+                output_path=str(output_path) if output_path else None,
+                error=error_msg,
+            )
+            
+            log_path = write_log(log)
+            typer.echo("")
+            typer.echo(f"✓ Log written: {log_path}")
+        
+        if error_msg:
+            raise typer.Exit(code=1)
 
 
 def main():
