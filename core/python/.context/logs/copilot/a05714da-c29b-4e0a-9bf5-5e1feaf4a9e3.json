@@ -1,0 +1,15 @@
+{
+  "prompt_id": "a05714da-c29b-4e0a-9bf5-5e1feaf4a9e3",
+  "timestamp_start": "2026-01-08T17:51:50.294681+00:00",
+  "timestamp_end": "2026-01-08T17:51:50.294758+00:00",
+  "user": "matthew",
+  "prompt": "test",
+  "instructions_source": "default",
+  "model": "gpt-4o-mini",
+  "budget_usd": 0.05,
+  "estimated_max_tokens": 0,
+  "usage": null,
+  "cost_usd": null,
+  "output_path": null,
+  "error": "Virtual key not found. Please set CONTEXT_VIRTUAL_KEY_MATTHEW environment variable."
+}

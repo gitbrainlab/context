@@ -348,7 +348,7 @@ class CopilotRunConfig(BaseModel):
         if self.instructions_file is not None:
             try:
                 return self.instructions_file.read_text()
-            except Exception as e:
+            except (FileNotFoundError, PermissionError, UnicodeDecodeError):
                 # If file doesn't exist or can't be read, return empty
                 return ""
         
@@ -389,6 +389,7 @@ def copilot_run(
     llm_response = None
     output_path = None
     max_tokens = 0
+    instructions_source = "default"  # Initialize before try block
     
     try:
         # Parse and validate configuration
@@ -408,8 +409,10 @@ def copilot_run(
         else:
             instructions_source = "default"
         
-        # Print configuration
-        typer.echo(f"Configuration: {config.model_dump_json(indent=2)}")
+        # Print minimal configuration info (avoid sensitive data)
+        typer.echo(f"Prompt ID: {config.prompt_id}")
+        typer.echo(f"Model: {config.model}")
+        typer.echo(f"Budget: ${config.budget}")
         typer.echo("")
         
         # Get LiteLLM proxy URL
@@ -468,9 +471,6 @@ def copilot_run(
         typer.echo(preview)
         typer.echo("-" * 60)
         
-    except ValueError as e:
-        error_msg = str(e)
-        typer.echo(f"Error: {e}", err=True)
     except Exception as e:
         error_msg = str(e)
         typer.echo(f"Error: {e}", err=True)
