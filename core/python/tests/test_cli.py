@@ -6,12 +6,21 @@ import json
 import os
 import pathlib
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 import pytest
 from typer.testing import CliRunner
 
-from context.cli import app, CopilotRunConfig, parse_prompt_hints
+from context.cli import (
+    app,
+    CopilotRunConfig,
+    parse_prompt_hints,
+    budget_to_max_tokens,
+    calculate_cost,
+    UsageMetadata,
+    LLMResponse,
+    generate_dashboard,
+)
 
 
 runner = CliRunner()
@@ -193,30 +202,45 @@ class TestCopilotRunCLI:
         assert result.exit_code == 0
         assert "Execute a one-off copilot run" in result.stdout
     
-    def test_valid_run_command(self):
-        """Test valid run command."""
+    @patch('context.cli.call_litellm')
+    def test_valid_run_command(self, mock_call_litellm):
+        """Test valid run command with mocked LiteLLM."""
+        # Mock LiteLLM response
+        mock_usage = UsageMetadata(
+            prompt_tokens=100,
+            completion_tokens=200,
+            total_tokens=300,
+        )
+        mock_response = LLMResponse(
+            content="Weekend planning suggestions...",
+            usage=mock_usage,
+            cost_usd=0.0001,
+        )
+        mock_call_litellm.return_value = mock_response
+        
+        # Set required environment variable
+        with patch.dict(os.environ, {"CONTEXT_VIRTUAL_KEY_MATTHEW": "test-key"}):
+            result = runner.invoke(app, [
+                "copilot", "run",
+                "--prompt", "build me a custom weekend planning tool",
+                "--user", "matthew",
+                "--budget", "0.05",
+            ])
+        
+        assert result.exit_code == 0
+        assert "LLM call successful" in result.stdout
+        assert "Dashboard generated" in result.stdout
+    
+    def test_missing_virtual_key(self):
+        """Test error when virtual key is missing."""
         result = runner.invoke(app, [
             "copilot", "run",
-            "--prompt", "build me a custom weekend planning tool",
+            "--prompt", "test",
             "--user", "matthew",
             "--budget", "0.05",
         ])
-        assert result.exit_code == 0
-        
-        # Parse output as JSON
-        output = json.loads(result.stdout)
-        assert output["prompt"] == "build me a custom weekend planning tool"
-        assert output["user"] == "matthew"
-        assert output["budget"] == 0.05
-        assert output["instructions"] is None
-        assert output["instructions_file"] is None
-        
-        # Check derived fields
-        assert "prompt_id" in output
-        assert output["model"] == "gpt-4o-mini"
-        assert output["mode"] == "one_off"
-        assert output["prompt_hints"]["task_type"] == "planner"
-        assert output["user_instructions"] == ""
+        assert result.exit_code == 1
+        assert "Virtual key not found" in result.stdout
     
     def test_invalid_budget(self):
         """Test invalid budget fails."""
@@ -237,31 +261,53 @@ class TestCopilotRunCLI:
         ])
         assert result.exit_code != 0
     
-    def test_instructions_flag(self):
+    @patch('context.cli.call_litellm')
+    def test_instructions_flag(self, mock_call_litellm):
         """Test with instructions flag."""
-        result = runner.invoke(app, [
-            "copilot", "run",
-            "--prompt", "test",
-            "--user", "matthew",
-            "--budget", "0.05",
-            "--instructions", "custom instructions",
-        ])
+        # Mock LiteLLM response
+        mock_usage = UsageMetadata(prompt_tokens=50, completion_tokens=100, total_tokens=150)
+        mock_response = LLMResponse(content="Response", usage=mock_usage, cost_usd=0.00005)
+        mock_call_litellm.return_value = mock_response
+        
+        with patch.dict(os.environ, {"CONTEXT_VIRTUAL_KEY_MATTHEW": "test-key"}):
+            result = runner.invoke(app, [
+                "copilot", "run",
+                "--prompt", "test",
+                "--user", "matthew",
+                "--budget", "0.05",
+                "--instructions", "custom instructions",
+            ])
+        
         assert result.exit_code == 0
-        output = json.loads(result.stdout)
-        assert output["instructions"] == "custom instructions"
+        assert "LLM call successful" in result.stdout
     
-    def test_instructions_file_flag(self):
+    @patch('context.cli.call_litellm')
+    def test_instructions_file_flag(self, mock_call_litellm):
         """Test with instructions-file flag."""
-        result = runner.invoke(app, [
-            "copilot", "run",
-            "--prompt", "test",
-            "--user", "matthew",
-            "--budget", "0.05",
-            "--instructions-file", "/tmp/test.txt",
-        ])
-        assert result.exit_code == 0
-        output = json.loads(result.stdout)
-        assert output["instructions_file"] == "/tmp/test.txt"
+        # Mock LiteLLM response
+        mock_usage = UsageMetadata(prompt_tokens=50, completion_tokens=100, total_tokens=150)
+        mock_response = LLMResponse(content="Response", usage=mock_usage, cost_usd=0.00005)
+        mock_call_litellm.return_value = mock_response
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+            f.write("test instructions")
+            temp_path = f.name
+        
+        try:
+            with patch.dict(os.environ, {"CONTEXT_VIRTUAL_KEY_MATTHEW": "test-key"}):
+                result = runner.invoke(app, [
+                    "copilot", "run",
+                    "--prompt", "test",
+                    "--user", "matthew",
+                    "--budget", "0.05",
+                    "--instructions-file", temp_path,
+                ])
+            
+            assert result.exit_code == 0
+            assert "LLM call successful" in result.stdout
+        finally:
+            pathlib.Path(temp_path).unlink()
     
     def test_both_instructions_flags_fails(self):
         """Test both instructions flags fails."""
@@ -275,3 +321,116 @@ class TestCopilotRunCLI:
         ])
         assert result.exit_code == 1
         assert "Error:" in result.stdout
+
+
+class TestBudgetCalculations:
+    """Tests for budget and cost calculations."""
+    
+    def test_budget_to_max_tokens_gpt4o_mini(self):
+        """Test budget to max tokens for gpt-4o-mini."""
+        max_tokens = budget_to_max_tokens(0.05, "gpt-4o-mini")
+        assert max_tokens > 0
+        # With 0.05 budget and pricing, should get reasonable token count
+        assert max_tokens > 50000  # At least 50k tokens
+    
+    def test_budget_to_max_tokens_gpt4(self):
+        """Test budget to max tokens for gpt-4."""
+        max_tokens = budget_to_max_tokens(0.05, "gpt-4")
+        assert max_tokens > 0
+        # GPT-4 is more expensive, should get fewer tokens
+        assert max_tokens < 2000  # Less than 2k tokens
+    
+    def test_calculate_cost(self):
+        """Test cost calculation from usage."""
+        usage = UsageMetadata(
+            prompt_tokens=100,
+            completion_tokens=200,
+            total_tokens=300,
+        )
+        cost = calculate_cost(usage, "gpt-4o-mini")
+        assert cost > 0
+        # Should be very small for gpt-4o-mini
+        assert cost < 0.001  # Less than 0.1 cents
+
+
+class TestLLMResponse:
+    """Tests for LLM response handling."""
+    
+    def test_llm_response_creation(self):
+        """Test creating LLM response."""
+        usage = UsageMetadata(
+            prompt_tokens=100,
+            completion_tokens=200,
+            total_tokens=300,
+        )
+        response = LLMResponse(
+            content="Test response",
+            usage=usage,
+            cost_usd=0.0001,
+        )
+        assert response.content == "Test response"
+        assert response.usage.total_tokens == 300
+        assert response.cost_usd == 0.0001
+
+
+class TestDashboardGeneration:
+    """Tests for dashboard generation."""
+    
+    def test_generate_dashboard_planner(self):
+        """Test generating planner dashboard."""
+        usage = UsageMetadata(
+            prompt_tokens=100,
+            completion_tokens=200,
+            total_tokens=300,
+        )
+        llm_response = LLMResponse(
+            content="Weekend activities:\n1. Hiking\n2. Museum visit",
+            usage=usage,
+            cost_usd=0.0001,
+        )
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = pathlib.Path(tmpdir) / "test.md"
+            result_path = generate_dashboard(
+                prompt="build me a weekend planner",
+                llm_response=llm_response,
+                task_type="planner",
+                output_path=output_path,
+            )
+            
+            assert result_path == output_path
+            assert output_path.exists()
+            
+            content = output_path.read_text()
+            assert "Weekend Planning Tool" in content
+            assert "Activities" in content
+            assert "Hiking" in content
+    
+    def test_generate_dashboard_general(self):
+        """Test generating general dashboard."""
+        usage = UsageMetadata(
+            prompt_tokens=50,
+            completion_tokens=100,
+            total_tokens=150,
+        )
+        llm_response = LLMResponse(
+            content="Analysis complete",
+            usage=usage,
+            cost_usd=0.00005,
+        )
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = pathlib.Path(tmpdir) / "test.md"
+            result_path = generate_dashboard(
+                prompt="analyze data",
+                llm_response=llm_response,
+                task_type="analysis",
+                output_path=output_path,
+            )
+            
+            assert result_path == output_path
+            assert output_path.exists()
+            
+            content = output_path.read_text()
+            assert "Task: Analysis" in content
+            assert "Analysis complete" in content
