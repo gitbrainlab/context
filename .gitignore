@@ -66,3 +66,7 @@ coverage/
 examples/**/analysis_*.json
 examples/**/context.json
 examples/**/*.log
+
+# Copilot runtime outputs
+.context/copilot/
+.context/logs/

@@ -24,6 +24,20 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
+dependencies = [
+    "typer>=0.9.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+[project.scripts]
+context = "context.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/gitbrainlab/context"
@@ -32,3 +46,10 @@ Documentation = "https://github.com/gitbrainlab/context/blob/main/docs"
 
 [tool.setuptools]
 packages = ["context"]
+package-dir = {"" = "."}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
