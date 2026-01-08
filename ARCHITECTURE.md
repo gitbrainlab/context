@@ -1,5 +1,7 @@
 # Context Architecture
 
+> **Note**: This document has been superseded by [docs/architecture.md](docs/architecture.md) which includes updated diagrams and detailed explanations. This file is kept for backwards compatibility.
+
 ## Overview
 
 Context is a lightweight, cross-runtime execution abstraction that shapes how LLM requests are executed across backend automation and frontend browser environments.
@@ -128,7 +130,7 @@ new_ctx = Context.from_json(json_str)
 
 ### TypeScript/JavaScript API
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // Create context
 const ctx = new Context({
@@ -192,8 +194,8 @@ context/
 │   └── local/
 ├── docs/                  # Documentation
 │   ├── getting-started.md
-│   ├── api-reference.md
-│   ├── migration-guide.md
+│   ├── reference.md
+│   ├── migration.md
 │   └── examples/
 ├── examples/              # Example implementations
 │   ├── backend-automation/

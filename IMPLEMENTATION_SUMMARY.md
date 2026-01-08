@@ -70,8 +70,8 @@ context/
 │   └── local/
 ├── docs/                # Documentation
 │   ├── getting-started.md
-│   ├── api-reference.md
-│   └── migration-guide.md
+│   ├── reference.md
+│   └── migration.md
 ├── examples/            # Working examples
 │   ├── backend-automation/
 │   ├── browser-analysis/
@@ -325,8 +325,8 @@ This is achieved through:
 - `ARCHITECTURE.md` (8KB - comprehensive)
 - `README.md` (updated with full usage)
 - `docs/getting-started.md` (5KB)
-- `docs/api-reference.md` (12KB - detailed API docs)
-- `docs/migration-guide.md` (9KB - practical migration)
+- `docs/reference.md` (12KB - detailed API docs)
+- `docs/migration.md` (9KB - practical migration)
 - `examples/README.md` (4KB)
 
 **Examples:**

@@ -1,5 +1,9 @@
 # API Reference
 
+This document provides a complete reference for the Context API in both Python and TypeScript.
+
+> **Note**: Both implementations provide identical functionality with language-appropriate naming conventions (snake_case for Python, camelCase for TypeScript).
+
 ## Core Classes
 
 ### Context

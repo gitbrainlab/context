@@ -59,7 +59,7 @@ print(result)
 ### TypeScript
 
 ```typescript
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // Create a context
 const ctx = new Context({
@@ -232,7 +232,7 @@ with open("results.json", "w") as f:
 
 ```typescript
 // Browser-based analysis
-import { Context } from '@evcatalyst/context';
+import { Context } from '@gitbrainlab/context';
 
 // User provides their own API key
 const apiKey = await getUserApiKey();
@@ -263,6 +263,6 @@ renderChart(result.result);
 
 ## Next Steps
 
-- [API Reference](api-reference.md)
-- [Migration Guide](migration-guide.md)
+- [API Reference](reference.md)
+- [Migration Guide](migration.md)
 - [Examples](examples/)
